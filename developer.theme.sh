@@ -13,8 +13,6 @@ GIT_THEME_PROMPT_SUFFIX="${_omb_prompt_green}|"
 RVM_THEME_PROMPT_PREFIX="|"
 RVM_THEME_PROMPT_SUFFIX="|"
 
-current_user=$(whoami)
-
 function __bobby_clock {
   printf "$(clock_prompt) "
 
@@ -65,24 +63,12 @@ function genericLinuxTemp {
     printf "${temp_in_c}"
 }
 
-function cpu_load {
-    # Ejecutar el comando top en modo batch, filtrar por el nombre de usuario actual y almacenar la salida en la variable 'output'
-    local output=$(top -b -n 1 -u "$current_user" | grep "Cpu(s)")
-
-    # Extraer el porcentaje de carga de la CPU excluyendo el estado "idle" usando awk
-    local cpu_load=$(echo "$output" | awk '{print 100.0-$8}')
-
-    # Imprimir la carga de la CPU
-    printf "${cpu_load}"
-}
 
 # if is a specific platfor use spacific configuration otherwise use default linux configuration. 
 function currentPlatform {
     # 2 ways to detect the platform 1) use a env var 2) some scrapping from the current system info (this is bash so just linux is considered)
     # env var is $PROMPT_THEME_PLATFORM
     #TODO: this is a first basic implementation this could be better but for now is ok
-    local currentPlatform
-
     local platform_according_env=$(echo $PROMPT_THEME_PLATFORM)
     #echo $platform_according_env
 
@@ -97,21 +83,31 @@ function currentPlatform {
     fi
 }
 
+function cpu_load {
+    # Ejecutar el comando top en modo batch, filtrar por el nombre de usuario actual y almacenar la salida en la variable 'output'
+    local output=$(top -b -n 1 -u $USER | grep "Cpu(s)")
+
+    # Extraer el porcentaje de carga de la CPU excluyendo el estado "idle" usando awk
+    local cpu_load=$(echo "$output" | awk '{print 100.0-$8}' | cut -d '.' -f 1)
+
+    # Imprimir la carga de la CPU
+    printf "${cpu_load}"
+}
 
 function getCpuLoad {
     local current_cpu_load=$(cpu_load)
 
-    local color
+    local color="${_omb_prompt_reset_color}"
     # Condicional para verificar los rangos
-    if ((current_cpu_load <= 40.0)); then
+    if ((current_cpu_load <= 40)); then
         color="${_omb_prompt_teal}"
-    elif ((current_cpu_load >= 41.0 && current_cpu_load <= 50.0)); then
+    elif ((current_cpu_load >= 41 && current_cpu_load <= 50)); then
         color="${_omb_prompt_reset_color}"
-    elif ((current_cpu_load >= 51.0 && current_cpu_load <= 60.0)); then
+    elif ((current_cpu_load >= 51 && current_cpu_load <= 60)); then
         color="${_omb_prompt_olive}"
-    elif ((current_cpu_load >= 61.0 && current_cpu_load <= 75.0)); then
+    elif ((current_cpu_load >= 61 && current_cpu_load <= 75)); then
         color="${_omb_prompt_red}"
-    elif ((current_cpu_load >= 76.0)); then
+    elif ((current_cpu_load >= 76)); then
         color="${_omb_prompt_red}!"
     fi
     printf "${color}${current_cpu_load}"
@@ -119,7 +115,7 @@ function getCpuLoad {
 
 function getCpuTemp {
     local temp_in_c
-    local currentPlatform = $(currentPlatform)
+    local currentPlatform=$(currentPlatform)
 
     if (( currentPlatform == "linux" )); then
         temp_in_c=$(genericLinuxTemp)
@@ -159,7 +155,7 @@ function getDefaultIp {
 function _omb_theme_PROMPT_COMMAND() {
     tech_versions="${_omb_prompt_reset_color}$(node_version)${RVM_THEME_PROMPT_PREFIX} $(py_version)${RVM_THEME_PROMPT_PREFIX} $(go_version)"
 
-    top_bar="\n$(battery_char)$(__bobby_clock)${tech_versions} $(getCpuTemp)${_omb_prompt_purple}\h ($(getDefaultIp)) ${_omb_prompt_reset_color}in ${_omb_prompt_green}\w\n"
+    top_bar="\n$(battery_char)$(__bobby_clock)${tech_versions} $(getCpuTemp) $(getCpuLoad)% ${_omb_prompt_purple}\h ($(getDefaultIp)) ${_omb_prompt_reset_color}in ${_omb_prompt_green}\w\n"
 
     prompt_line="${_omb_prompt_bold_teal}$(scm_prompt_char_info) ${_omb_prompt_green}→${_omb_prompt_reset_color} "
     
