@@ -47,8 +47,14 @@ function ruby_version {
 }
 
 function py_version {
-	val_py=$(python --version | cut -d ' ' -f 2)
-	printf "py ${val_py}"
+	local val_py=$(python --version | cut -d ' ' -f 2)
+	if command -v conda &>/dev/null; then
+		local condav=$(conda env list | grep '*' | awk '{print $1}')
+		printf "conda<${condav}> ${val_py}"
+	else
+		# Si nvm no está instalado, utilizar "njs"
+		printf "py ${val_py}"
+	fi
 }
 
 function OPi5p_Temp {
