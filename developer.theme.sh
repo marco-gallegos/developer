@@ -24,6 +24,11 @@ function return_delimited {
 	fi
 }
 
+function extract_key {
+	value=$(echo "$1" | grep -oP "(?<=$2)[^---]+")
+	printf "$value"
+}
+
 function __bobby_clock {
 	printf "$(clock_prompt) "
 
@@ -35,25 +40,25 @@ function __bobby_clock {
 function node_version {
 	val_node=$(node --version)
 	if command -v nvm &>/dev/null; then
-		return_delimited $1 "nvm" "${val_node}"
+		return_delimited $1 "node" "nvm ${val_node}"
 	else
 		# Si nvm no está instalado, utilizar "njs"
-		return_delimited $1 "njs" "${val_node}"
+		return_delimited $1 "node" "njs ${val_node}"
 	fi
 }
 
 function go_version {
 	local val_go=$(go version | cut -d ' ' -f 3 | cut -d 'o' -f 2)
-	return_delimited $1 "go" "${val_go}"
+	return_delimited $1 "go" "go ${val_go}"
 }
 
 function ruby_version {
 	local val_rb=$(ruby --version | cut -d ' ' -f 2)
 	if command -v rvm &>/dev/null; then
-		return_delimited $1 "rvm" "${val_rb}"
+		return_delimited $1 "ruby" "rvm ${val_rb}"
 	else
 		# Si nvm no está instalado, utilizar "njs"
-		return_delimited $1 "rb" "${val_rb}"
+		return_delimited $1 "ruby" "rb ${val_rb}"
 	fi
 }
 
@@ -61,21 +66,21 @@ function py_version {
 	local val_py=$(python --version | cut -d ' ' -f 2)
 	if command -v conda &>/dev/null; then
 		local condav=$(conda env list | grep '*' | awk '{print $1}')
-		return_delimited $1 "conda<${condav}>" "${val_py}"
+		return_delimited $1 "python" "conda<${condav}> ${val_py}"
 	else
 		# Si nvm no está instalado, utilizar "njs"
-		return_delimited $1 "py" "${val_py}"
+		return_delimited $1 "python" "py ${val_py}"
 	fi
 }
 
 function OPi5p_Temp {
-	local temp_opi5p=$(cat /sys/class/thermal/thermal_zone4/temp)
+	local temp_opi5p=$(cat /sys/class/thermal/thermal_zone4/temp &)
 	local temp_in_c=$((temp_opi5p / 1000))
 	printf "${temp_in_c}"
 }
 
 function genericLinuxTemp {
-	local temp_lnx=$(cat /sys/class/thermal/thermal_zone0/temp)
+	local temp_lnx=$(cat /sys/class/thermal/thermal_zone0/temp &)
 	local temp_in_c=$((temp_lnx / 1000))
 	printf "${temp_in_c}"
 }
@@ -85,11 +90,11 @@ function currentPlatform {
 	# 2 ways to detect the platform 1) use a env var 2) some scrapping from the current system info (this is bash so just linux is considered)
 	# env var is $PROMPT_THEME_PLATFORM
 	#TODO: this is a first basic implementation this could be better but for now is ok
-	local platform_according_env=$(echo $PROMPT_THEME_PLATFORM)
+	local platform_according_env=$(echo $PROMPT_THEME_PLATFORM &)
 	#echo $platform_according_env
 
 	# if opi5 -> search for rk3588 tag in kernel and ...
-	local opi5p_kernel_tag=$(uname --kernel-release | cut -d '-' -f 3)
+	local opi5p_kernel_tag=$(uname --kernel-release | cut -d '-' -f 3 &)
 	#echo $opi5p_kernel_tag
 
 	if [[ $platform_according_env == "OPI5P" || $opi5p_kernel_tag == "rk3588" ]]; then
@@ -101,17 +106,17 @@ function currentPlatform {
 
 function cpu_load {
 	# Ejecutar el comando top en modo batch, filtrar por el nombre de usuario actual y almacenar la salida en la variable 'output'
-	local output=$(top -b -n 1 -u $USER | grep "Cpu(s)")
+	local output=$(top -b -n 1 -u $USER | grep "Cpu(s)" &)
 
 	# Extraer el porcentaje de carga de la CPU excluyendo el estado "idle" usando awk
-	local cpu_load=$(echo "$output" | awk '{print 100.0-$8}' | cut -d '.' -f 1)
+	local cpu_load=$(echo "$output" | awk '{print 100.0-$8}' | cut -d '.' -f 1 &)
 
 	# Imprimir la carga de la CPU
 	printf "${cpu_load}"
 }
 
 function getCpuLoad {
-	local current_cpu_load=$(cpu_load)
+	local current_cpu_load=$(cpu_load &)
 
 	local color="${_omb_prompt_reset_color}"
 	# Condicional para verificar los rangos
@@ -190,6 +195,14 @@ function _omb_theme_PROMPT_COMMAND() {
 		go_version true &
 		getDefaultIp true &
 	)
+
+	cputemp=$(extract_key "$values" "cputemp")
+	cpuload=$(extract_key "$values" "cpuload")
+	nodeversion=$(extract_key "$values" "node")
+	pyversion=$(extract_key "$values" "python")
+	goversion=$(extract_key "$values" "go")
+
+	defaultip=$(extract_key "$values" "ip")
 
 	#
 	# end_time=$(($(date +%s%N) / 1000000))
