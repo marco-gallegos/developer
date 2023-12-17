@@ -187,6 +187,8 @@ function _omb_theme_PROMPT_COMMAND() {
 
 	#wait
 	# NEW way using paralellism
+	# this throws all inside the $() as a new thread but awaits the execution end_time
+	# so this takes the same time as the slower function
 	values=$(
 		getCpuLoad true & # this is very slow
 		getCpuTemp true &
