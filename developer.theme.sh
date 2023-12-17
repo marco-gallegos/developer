@@ -13,6 +13,17 @@ GIT_THEME_PROMPT_SUFFIX="${_omb_prompt_green}|"
 RVM_THEME_PROMPT_PREFIX="|"
 RVM_THEME_PROMPT_SUFFIX="|"
 
+function return_delimited {
+	# 1 = flag 2 = tag 3 = value
+	if [[ $1 = "true" ]]; then
+		printf "$2 $3---"
+	elif [[ $1 = "false" ]]; then
+		printf "$2 $3"
+	else
+		printf "$1 $2"
+	fi
+}
+
 function __bobby_clock {
 	printf "$(clock_prompt) "
 
@@ -24,25 +35,25 @@ function __bobby_clock {
 function node_version {
 	val_node=$(node --version)
 	if command -v nvm &>/dev/null; then
-		printf "nvm ${val_node}"
+		return_delimited $1 "nvm" "${val_node}"
 	else
 		# Si nvm no está instalado, utilizar "njs"
-		printf "njs ${val_node}"
+		return_delimited $1 "njs" "${val_node}"
 	fi
 }
 
 function go_version {
 	local val_go=$(go version | cut -d ' ' -f 3 | cut -d 'o' -f 2)
-	printf "go ${val_go}"
+	return_delimited $1 "go" "${val_go}"
 }
 
 function ruby_version {
 	local val_rb=$(ruby --version | cut -d ' ' -f 2)
 	if command -v rvm &>/dev/null; then
-		printf "rvm ${val_rb}"
+		return_delimited $1 "rvm" "${val_rb}"
 	else
 		# Si nvm no está instalado, utilizar "njs"
-		printf "rb ${val_rb}"
+		return_delimited $1 "rb" "${val_rb}"
 	fi
 }
 
@@ -50,10 +61,10 @@ function py_version {
 	local val_py=$(python --version | cut -d ' ' -f 2)
 	if command -v conda &>/dev/null; then
 		local condav=$(conda env list | grep '*' | awk '{print $1}')
-		printf "conda<${condav}> ${val_py}"
+		return_delimited $1 "conda<${condav}>" "${val_py}"
 	else
 		# Si nvm no está instalado, utilizar "njs"
-		printf "py ${val_py}"
+		return_delimited $1 "py" "${val_py}"
 	fi
 }
 
@@ -115,7 +126,7 @@ function getCpuLoad {
 	elif ((current_cpu_load >= 76)); then
 		color="${_omb_prompt_red}!"
 	fi
-	printf "${color}${current_cpu_load}"
+	return_delimited $1 "cpuload" "${color}${current_cpu_load}"
 }
 
 function getCpuTemp {
@@ -141,7 +152,7 @@ function getCpuTemp {
 	elif ((temp_in_c >= 76 && temp_in_c)); then
 		color="${_omb_prompt_red}!"
 	fi
-	printf "${color}${temp_in_c}°"
+	return_delimited $1 "cputemp" "${color}${temp_in_c}°"
 }
 
 # this should work on every "new" linux distro
@@ -152,24 +163,35 @@ function getDefaultIp {
 	# Obtiene la dirección IP de la interfaz de red activa
 	local ip_address=$(ip -o -4 address show dev "$interface" | awk '{split($4, a, "/"); print a[1]}')
 
-	printf "${ip_address}"
+	return_delimited $1 "ip" "${ip_address}"
 }
 
 # prompt constructor
 function _omb_theme_PROMPT_COMMAND() {
 	# start_time=$(($(date +%s%N) / 1000000))
 
-	cputemp=$(getCpuTemp &)
+	#cputemp=$(getCpuTemp &)
 
-	cpuload=$(getCpuLoad &)
+	#cpuload=$(getCpuLoad &)
 
-	pyversion=$(py_version &)
-	nodeversion=$(node_version &)
-	goversion=$(go_version &)
+	#pyversion=$(py_version &)
+	#nodeversion=$(node_version &)
+	#goversion=$(go_version &)
 
-	defaultip=$(getDefaultIp &)
+	#defaultip=$(getDefaultIp &)
 
-	wait
+	#wait
+	# NEW way using paralellism
+	values=$(
+		getCpuLoad true & # this is very slow
+		getCpuTemp true &
+		py_version true &
+		node_version true &
+		go_version true &
+		getDefaultIp true &
+	)
+
+	#
 	# end_time=$(($(date +%s%N) / 1000000))
 	# elapsed_time=$((end_time - start_time))
 	# echo "Tiempo total de ejecución: ${elapsed_time} milisegundos"
