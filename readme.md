@@ -16,12 +16,18 @@ This is a oh my bash theme forked from bobby theme to provide a more useful prom
 
 1. oh my bash previously installed [OMB site](https://ohmybash.nntoan.com) 
 
+### install steps
 ```shell
 git clone https://github.com/marco-gallegos/developer.github
 cd developer
 
 # needs gnu make -> sudo apt install make
 make install 
+
+nvim ~/.bashrc 
+
+## edit OSH_THEME set to ->
+## OSH_THEME="developer"
 
 ```
 
@@ -36,3 +42,21 @@ make install
 - [x] same colors everywhere
 - [x] bobby theme structure and features (git status, 2 lines, responsive)
 - [x] platform selection using a env VAR ($PROMPT_THEME_PLATFORM)
+
+```mermaid
+---
+title: WIP
+---
+graph TD;
+
+  features --> languages
+  features --> hostinfo
+  
+  hostinfo --> ip
+  
+  languages --> node[node and nvm]
+  languages --> python
+
+
+
+```
