@@ -9,6 +9,22 @@ This is a oh my bash theme forked from bobby theme to provide a more useful prom
 - Performance is not important, readability and utility is it.
     - is for developer so im assuming you are using a good processor (someting like 4 cores 1.5 Ghz)
 
+
+## install
+
+### requirements
+
+1. oh my bash previously installed [OMB site](https://ohmybash.nntoan.com) 
+
+```shell
+git clone https://github.com/marco-gallegos/developer.github
+cd developer
+
+# needs gnu make -> sudo apt install make
+make install 
+
+```
+
 ## features
 
 - [x] show hostname
